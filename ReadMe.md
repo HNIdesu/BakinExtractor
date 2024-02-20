@@ -10,7 +10,7 @@
 | resourceTableOffset | 8 | long |  | seek after read the value |
 | loadingFormTitle | * | CustomString | Loading... | title of the loading form |
 | verifyCode | 4 | int |  |  |
-| verifyCodeDiggest | * | MD5Hash | | md5 hash of what+2525(try what+5252 if failed) |
+| verifyCodeDiggest | * | MD5Hash | | md5 hash of verifyCode+2525(try verifyCode+5252 if failed) |
 | zipLength | 8 | long |  | the length of the zip file to be extracted |
 | zipData | zipLength-8 | byte[] |  | the data of encrypted zip file(without zip header { 80, 75, 3, 4, 20, 0, 0, 0 }) |
 | entryCount | 4 | int |  |  |
