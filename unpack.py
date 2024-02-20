@@ -5,6 +5,13 @@ from hashlib import md5
 from io import BufferedReader
 import zlib
 from zipfile import ZipFile
+from ctypes import CDLL
+import ctypes
+
+utility=CDLL("./utility.dll")
+utility.decrypt.restype=ctypes.c_int32
+utility.decrypt.argtypes=[ctypes.c_char_p,ctypes.c_int32,ctypes.c_char_p,ctypes.c_int32]
+
 
 KEY1:bytes=b"\x00\x08\x07\x03\x05\x0C\x0B\x0A\x09\x01\x02\x0E\x04\x0D\x06\x0F"
 KEY2:bytes=b"\x02\x0E\x04\x0A\x06\x0B\x03\x00\x09\x0F\x07\x01\x0D\x08\x0C\x05"
@@ -48,11 +55,10 @@ def verify(verify_code:int,verify_code_md5:bytes)->bool:
 
 
 def decrypt(data:bytes,key:bytes,start:int=0)->bytes:
-    data=bytearray(data)
-    for i in range(0,len(data)):
-        j=(i+start)%16
-        data[i]=(data[i]-j*key[j]).to_bytes(4,byteorder="little",signed=True)[0]
-    return bytes(data)
+    if utility.decrypt(ctypes.c_char_p(data),ctypes.c_int32(len(data)),ctypes.c_char_p(key),ctypes.c_int32(start))!=len(data):
+        print("Dectypt failed")
+        exit()
+    return data
 
 def isDefaultCheckFile(filepath:str)->bool:
     suffix_list=(".cg",".cgh",".dlp_d",".exe",".dll",".dlp",".webm")
@@ -130,5 +136,3 @@ with open(archiver_path,"rb") as file:
         original_size=int.from_bytes(file.read(8),"little")
         entry_list.append((entry_name,compressed_size,original_size))
     extractAllEntries(file,entry_list,save_directory)
-
-    
