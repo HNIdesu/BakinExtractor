@@ -68,7 +68,7 @@ def isDefaultCheckFile(filepath:str)->bool:
     return False
 
 def extractZipFileAndDecrypt(file:BufferedReader):
-    print("Extracting and decrypt zip files...")
+    print("Extracting and decrypting zip files...")
     
     zip_length=int.from_bytes(file.read(8),"little")
     offset=file.tell()
