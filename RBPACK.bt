@@ -1,0 +1,93 @@
+//------------------------------------------------
+//--- 010 Editor v13.0.1 Binary Template
+//
+//      File: RBPack
+//   Authors: HNIdesu
+//   Version: 1.0
+//   Purpose: To parse bakin resource file
+//  Category: Others
+// File Mask: *.rbpack
+//  ID Bytes: 42 4B 4E 50 41 4B
+//   History: 2024-02-11 HNIdesu create the template.
+//            2024-02-12 HNIdesu complate the template.
+//------------------------------------------------
+
+int strcmp(char str1[],char str2[],int len){
+    while(len--){
+        if(str1[len]!=str2[len])
+            return 0;
+    }
+    return 1;
+}
+
+struct MD5Hash{
+    byte length;
+    char data[length]<format = hex>;  
+};
+
+struct CustomString{
+    uchar length;
+    local int dataPosition=FTell();
+    char data[length];
+};
+
+struct Entry{
+    CustomString str<read=UnScrambleString>;
+    local string entryName=UnScrambleString(str);
+    int64 compressedSize;
+    int64 originalSize;
+};
+
+string UnScrambleString(CustomString& str)
+{
+    local string result="";
+    local char codes[16]={0x02,0x0E,0x04,0x0A,0x06,0x0B,0x03,0x00,0x09,0x0F,0x07,0x01,0x0D,0x08,0x0C,0x05};
+    local int i,j;
+    local int b;
+    for(i=0;i<str.length;i++)
+    {
+        j=(i+str.dataPosition)%16;
+        b=str.data[i]-codes[j] * j;
+        result+=(char)b;
+    }
+    return result;
+}
+
+local int size;
+
+struct Resource{
+    byte data[size];
+};
+
+struct ResourceTable{
+    int32 entryCount;
+    local int i;
+    local int64 totalSize=0;
+    for(i=0;i<entryCount;i++){
+        Entry entry;
+        totalSize+=entry.compressedSize;
+    }
+};
+
+struct ResourceList{
+    ResourceTable resourceTable;
+    local int i;
+    for(i=0;i<resourceTable.entryCount;i++){
+        size=resourceTable.entry[i].compressedSize;
+        Resource resource;
+    }
+};
+
+struct RBPack{
+	char signature[6];
+	BigEndian();
+	uint16 dataVersionNo;
+	LittleEndian();
+	int64 resourceTableOffset;
+    CustomString loadingFormTitle;
+    int32 verifyCode;
+    MD5Hash verifyCodeDiggest;
+    int64 zipLength;
+    byte zipData[zipLength-8];
+    ResourceList resourceList;
+} file;
