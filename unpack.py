@@ -68,7 +68,7 @@ def isDefaultCheckFile(filepath:str)->bool:
     return False
 
 def extractZipFileAndDecrypt(file:BufferedReader):
-    print("Extracting and decrypting zip files...")
+    print("Extracting and decrypt zip files...")
     
     zip_length=int.from_bytes(file.read(8),"little")
     offset=file.tell()
@@ -95,8 +95,8 @@ def extractZipFileAndDecrypt(file:BufferedReader):
 
 def extractAllEntries(file:BufferedReader,entry_list:list,save_dir:str):
     print("Decrypting all entries...")
-    offset=file.tell()
     for entry in entry_list:
+        offset=file.tell()
         entry_name:str=entry[0]
         compressed_size:int=entry[1]
         original_size:int=entry[2]
@@ -104,7 +104,7 @@ def extractAllEntries(file:BufferedReader,entry_list:list,save_dir:str):
         data=file.read(compressed_size)
         if(compressed_size!=original_size):
             data=zlib.decompress(data)
-        data=decrypt(data,KEY2,offset)
+        data=decrypt(data,KEY2,0)
 
         dest_path=os.path.join(save_dir,entry_name.replace("/",os.path.sep))
         if not os.path.exists(os.path.dirname(dest_path)):
@@ -118,6 +118,7 @@ with open(archiver_path,"rb") as file:
         print("Signature mismatch!")
         exit()
     data_version=int.from_bytes(file.read(2),"big")
+    print(f"data version:{data_version}")
     resource_table_offset=int.from_bytes(file.read(8),"little")+file.tell()
     loading_form_title=readString(file)
     verify_code=int.from_bytes(file.read(4),"little")
@@ -136,3 +137,4 @@ with open(archiver_path,"rb") as file:
         original_size=int.from_bytes(file.read(8),"little")
         entry_list.append((entry_name,compressed_size,original_size))
     extractAllEntries(file,entry_list,save_directory)
+    print("Completed!")
