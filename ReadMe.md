@@ -16,7 +16,7 @@
 | zipLength | 8 | long |  | the length of the zip file to be extracted |
 | zipData | zipLength-8 | byte[] |  | the data of encrypted zip file(without zip header { 80, 75, 3, 4, 20, 0, 0, 0 }) |
 | entryCount | 4 | int |  |  |
-| entries | * | entry[] |  |  |
+| entries | * | Entry[] |  |  |
 
 **Entry**
 | Name | Size(Byte) | Type | Comment |
