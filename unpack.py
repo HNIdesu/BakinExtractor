@@ -1,5 +1,5 @@
 import os
-import sys
+import os.path as Path
 import io
 from hashlib import md5
 from io import BufferedReader
@@ -15,18 +15,6 @@ utility.decrypt.argtypes=[ctypes.c_char_p,ctypes.c_int32,ctypes.c_char_p,ctypes.
 
 KEY1:bytes=b"\x00\x08\x07\x03\x05\x0C\x0B\x0A\x09\x01\x02\x0E\x04\x0D\x06\x0F"
 KEY2:bytes=b"\x02\x0E\x04\x0A\x06\x0B\x03\x00\x09\x0F\x07\x01\x0D\x08\x0C\x05"
-
-if len(sys.argv)<=2:
-    print(f"Usage: {sys.argv[0]} rbpack_path output_directory")
-    print(f"Example: {sys.argv[0]} data.rbpack data")
-    exit()
-archiver_path=sys.argv[1]
-save_directory=sys.argv[2]
-if not os.path.exists(save_directory):
-    os.mkdir(save_directory)
-if not os.path.exists(archiver_path):
-    print(f"file {archiver_path} not found!")
-    exit()
 
 def equals(a1:bytes,a2:bytes)->bool:
     length=len(a1)
@@ -67,22 +55,22 @@ def isDefaultCheckFile(filepath:str)->bool:
             return True
     return False
 
-def extractZipFileAndDecrypt(file:BufferedReader):
+def extractZipFileAndDecrypt(file:BufferedReader,save_directory:str):
     print("Extracting and decrypt zip files...")
     
     zip_length=int.from_bytes(file.read(8),"little")
     offset=file.tell()
-    zip_extract_path=os.path.join(save_directory,"unpack.zip")
-    if not os.path.exists(zip_extract_path):
+    zip_extract_path=Path.join(save_directory,"unpack.zip")
+    if not Path.exists(zip_extract_path):
         os.mkdir(zip_extract_path)
     zipfile=ZipFile(io.BytesIO(b"\x50\x4B\x03\x04\x14\x00\x00\x00"+decrypt(file.read(zip_length-8),KEY1,offset)))
 
     for entry_name in zipfile.namelist():
-        save_path=os.path.join(zip_extract_path,entry_name.replace("/",os.path.sep))
+        save_path=Path.join(zip_extract_path,entry_name.replace("/",Path.sep))
         if(entry_name.endswith("/")):#directory entry
             os.makedirs(save_path,exist_ok=True)
             continue
-        os.makedirs(os.path.dirname(save_path),exist_ok=True)
+        os.makedirs(Path.dirname(save_path),exist_ok=True)
         print(f"Extracting {entry_name}")
         data=zipfile.read(entry_name)
         if(isDefaultCheckFile(save_path)):
@@ -106,35 +94,42 @@ def extractAllEntries(file:BufferedReader,entry_list:list,save_dir:str):
             data=zlib.decompress(data)
         data=decrypt(data,KEY2,0)
 
-        dest_path=os.path.join(save_dir,entry_name.replace("/",os.path.sep))
-        if not os.path.exists(os.path.dirname(dest_path)):
-            os.makedirs(os.path.dirname(dest_path),exist_ok=True)
+        dest_path=Path.join(save_dir,entry_name.replace("/",Path.sep))
+        if not Path.exists(Path.dirname(dest_path)):
+            os.makedirs(Path.dirname(dest_path),exist_ok=True)
         with open(dest_path,"wb") as fs:
             fs.write(data)
 
-with open(archiver_path,"rb") as file:
-    signature=file.read(6).decode("utf-8")
-    if(signature!="BKNPAK"):
-        print("Signature mismatch!")
+def unpack(archiver_path:str,save_directory:str):
+    if not Path.exists(save_directory):
+        os.mkdir(save_directory)
+    if not Path.exists(archiver_path):
+        print(f"file {archiver_path} not found!")
         exit()
-    data_version=int.from_bytes(file.read(2),"big")
-    print(f"data version:{data_version}")
-    resource_table_offset=int.from_bytes(file.read(8),"little")+file.tell()
-    loading_form_title=readString(file)
-    verify_code=int.from_bytes(file.read(4),"little")
-    verify_code_md5_length=file.read(1)[0]
-    verify_code_md5=file.read(verify_code_md5_length)
-    if not verify(verify_code,verify_code_md5):
-        print("Verify failed")
-        exit()
-    extractZipFileAndDecrypt(file)
-    file.seek(resource_table_offset,0)
-    entry_count=int.from_bytes(file.read(4),"little")
-    entry_list=list()
-    for i in range(0,entry_count):
-        entry_name=readEncryptedString(file)
-        compressed_size=int.from_bytes(file.read(8),"little")
-        original_size=int.from_bytes(file.read(8),"little")
-        entry_list.append((entry_name,compressed_size,original_size))
-    extractAllEntries(file,entry_list,save_directory)
-    print("Completed!")
+    
+    with open(archiver_path,"rb") as file:
+        signature=file.read(6).decode("utf-8")
+        if(signature!="BKNPAK"):
+            print("Signature mismatch!")
+            exit()
+        data_version=int.from_bytes(file.read(2),"big")
+        print(f"data version:{data_version}")
+        resource_table_offset=int.from_bytes(file.read(8),"little")+file.tell()
+        loading_form_title=readString(file)
+        verify_code=int.from_bytes(file.read(4),"little")
+        verify_code_md5_length=file.read(1)[0]
+        verify_code_md5=file.read(verify_code_md5_length)
+        if not verify(verify_code,verify_code_md5):
+            print("Verify failed")
+            exit()
+        extractZipFileAndDecrypt(file,save_directory)
+        file.seek(resource_table_offset,0)
+        entry_count=int.from_bytes(file.read(4),"little")
+        entry_list=list()
+        for i in range(0,entry_count):
+            entry_name=readEncryptedString(file)
+            compressed_size=int.from_bytes(file.read(8),"little")
+            original_size=int.from_bytes(file.read(8),"little")
+            entry_list.append((entry_name,compressed_size,original_size))
+        extractAllEntries(file,entry_list,save_directory)
+        print("Completed!")
