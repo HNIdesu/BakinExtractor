@@ -3,14 +3,22 @@ import ctypes
 from ctypes import CDLL
 import zipfile
 import zlib
+import sys
 import os.path as Path
 from hashlib import md5
 from io import BufferedWriter,BytesIO
 
+def resource_path(relative_path: str) -> str:
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = Path.abspath(".")
+    return Path.join(base_path, relative_path)
+
 KEY1:bytes=b"\x00\x08\x07\x03\x05\x0C\x0B\x0A\x09\x01\x02\x0E\x04\x0D\x06\x0F"
 KEY2:bytes=b"\x02\x0E\x04\x0A\x06\x0B\x03\x00\x09\x0F\x07\x01\x0D\x08\x0C\x05"
 
-utility=CDLL("./utility.dll")
+utility=CDLL(resource_path("utility.dll"))
 utility.encrypt.restype=ctypes.c_int32
 utility.encrypt.argtypes=[ctypes.c_char_p,ctypes.c_int32,ctypes.c_char_p,ctypes.c_int32]
 

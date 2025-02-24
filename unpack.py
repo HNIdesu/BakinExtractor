@@ -7,8 +7,17 @@ import zlib
 from zipfile import ZipFile
 from ctypes import CDLL
 import ctypes
+import sys
 
-utility=CDLL("./utility.dll")
+
+def resource_path(relative_path: str) -> str:
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = Path.abspath(".")
+    return Path.join(base_path, relative_path)
+
+utility=CDLL(resource_path("utility.dll"))
 utility.decrypt.restype=ctypes.c_int32
 utility.decrypt.argtypes=[ctypes.c_char_p,ctypes.c_int32,ctypes.c_char_p,ctypes.c_int32]
 
