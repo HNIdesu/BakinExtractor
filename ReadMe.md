@@ -1,40 +1,37 @@
-**Data Structure**
+# BakinExtractor
 
-**Default ByteOrder: LittleEndian**
+## Introduction
+BakinExtractor is a tool designed to unpack and repack resource files (`data.rbpack`) created by RPG Developer Bakin.
 
-**Data Version: 1**
+## Usage
 
-**BKNPACK**
-| Name | Size(Byte) | Type | Value | Comment |
-| --- | --- | --- | --- | --- |
-| signature | 6 | string | BKNPAK |  |
-| dataVersionNo | 2 | ushort |  | big endian byte order |
-| resourceTableOffset | 8 | long |  | skipped |
-| loadingFormTitle | * | CustomString | Loading... | title of the loading form |
-| verifyCode | 4 | int |  |  |
-| verifyCodeDigest | * | MD5Hash | | md5 hash of what+2525(try what+5252 if failed) |
-| zipLength | 8 | long |  | the length of the zip file to be extracted |
-| zipData | zipLength-8 | byte[] |  | the data of encrypted zip file(without zip header { 80, 75, 3, 4, 20, 0, 0, 0 }) |
-| entryCount | 4 | int |  |  |
-| entries | * | Entry[] |  |  |
+### Packing
+To pack a directory into a `data.rbpack` file, use the following command:
+```
+bakin-extractor pack <unpack_directory> <packed_file_path>
+```
+- `<unpack_directory>`: The directory containing the files you want to pack.
+- `<packed_file_path>`: The path where the packed file will be saved.
 
-**Entry**
-| Name | Size(Byte) | Type | Comment |
-| --- | ---| --- | --- |
-| entryName | * | CustomString | encryped |  |
-| compressedSize | 8 | int64 |  |
-| originalSize | 8 | int64 |  |
+### Unpacking
+To unpack a `data.rbpack` file, use the following command:
+```
+bakin-extractor unpack <rbpack_path> <output_directory>
+```
+- `<rbpack_path>`: The path to the `data.rbpack` file you want to unpack.
+- `<output_directory>`: The directory where the unpacked files will be saved.
 
-**MD5Hash**
-| Name | Size(Byte) | Type | Comment |
-| --- | ---| --- | --- |
-| length | 1 | byte | hash length |
-| data | length | byte[] | md5 value |
+## Examples
 
+### Packing Example
+```
+bakin-extractor pack ./unpacked_data ./packed_data.rbpack
+```
 
-**CustomString**
-| Name | Size(Byte) | Type | Comment |
-| --- | ---| --- | --- |
-| length | 1 | byte | string length |
-| data | length | string | string encoded in utf-8 |
+### Unpacking Example
+```
+bakin-extractor unpack ./data.rbpack ./output_data
+```
 
+## License
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
