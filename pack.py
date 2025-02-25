@@ -7,7 +7,7 @@ import sys
 import os.path as Path
 from hashlib import md5
 from io import BufferedWriter,BytesIO
-from sys import exit
+import json as JSON
 
 def resource_path(relative_path: str) -> str:
     try:
@@ -25,8 +25,8 @@ utility.encrypt.argtypes=[ctypes.c_char_p,ctypes.c_int32,ctypes.c_char_p,ctypes.
 
 def encrypt(data:bytes,key:bytes,start:int=0)->bytes:
     if utility.encrypt(ctypes.c_char_p(data),ctypes.c_int32(len(data)),ctypes.c_char_p(key),ctypes.c_int32(start))!=len(data):
-        print("Enctypt failed")
-        exit()
+        print("Encrypt failed")
+        raise SystemExit(1)
     return data
 
 def writeString(file:BufferedWriter,s:str):
@@ -94,22 +94,39 @@ def encryptAndCompressZipFile(directory:str, zip_file:str):
 def pack(unpack_dir:str,packed_file_path:str):
     if not Path.exists(unpack_dir):
         print(f"Directory {unpack_dir} not exists,aborted!")
-        exit()
+        raise SystemExit(1)
+    info_path = Path.join(unpack_dir,"$pack_info.json")
+    if not Path.exists(info_path):
+        print(f"File {info_path} not exists,aborted!")
+    with open(info_path,"r",encoding="utf-8") as sr:
+        pack_info = JSON.loads(sr.read())
     if not (Path.dirname(packed_file_path)=="" or Path.exists(Path.dirname(packed_file_path))):
         os.makedirs(Path.dirname(packed_file_path),exist_ok=True)
     if Path.exists(Path.join(unpack_dir,"unpack.zip")) and Path.isdir(Path.join(unpack_dir,"unpack.zip")):
         encryptAndCompressZipFile(Path.join(unpack_dir,"unpack.zip"),"unpack.zip")
     else:
         print("Directory unpack.zip not exists,aborted!")
-        exit(0)
+        raise SystemExit(1)
     with open(packed_file_path,"wb") as dest_file:
         signatures=b"BKNPAK"
         dest_file.write(signatures)
-        data_version=1
+        data_version = pack_info["data_version"]
+        if data_version.find("_") != -1:
+            data_version = int(data_version[:data_version.find("_")])
+        else:
+            data_version = int(data_version)
         dest_file.write(int.to_bytes(data_version,length=2,byteorder="big"))
-        dest_file.write(int.to_bytes(0,length=8))#offset of resource table,reserved
-        loading_form_title="Loading..."
-        writeString(dest_file,loading_form_title)
+        dest_file.write(int.to_bytes(0,length=8))# Offset of resource table,reserved
+        data_version = pack_info["data_version"]
+        loading_form_title:str = pack_info["loading_form_title"]
+        if data_version == "1":
+            writeString(dest_file,loading_form_title)
+        else:# For data version 1_1 or greater
+            if(loading_form_title == ""):
+                dest_file.write(b"\x00")
+            else:
+                dest_file.write(b"\x01")
+                writeString(dest_file,loading_form_title)
         verify_code=0
         dest_file.write(int.to_bytes(verify_code,length=4,byteorder="little"))
         verify_code_diggest=md5(int.to_bytes(verify_code+2525,length=4,byteorder="little")).digest()
@@ -125,9 +142,11 @@ def pack(unpack_dir:str,packed_file_path:str):
         os.remove("unpack.zip")
         entry_list=dict()
         for root, _, files in os.walk(unpack_dir):
-            if("unpack.zip" in root):
+            if "unpack.zip" in root:
                 continue
             for file in files:
+                if file == "$pack_info.json":
+                    continue
                 entry_name=Path.join(root,file)[len(unpack_dir):].replace(os.sep,"/")
                 if(entry_name.startswith("/")):
                     entry_name=entry_name[1:]

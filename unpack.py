@@ -8,7 +8,7 @@ from zipfile import ZipFile
 from ctypes import CDLL
 import ctypes
 import sys
-from sys import exit
+import json as JSON
 
 def resource_path(relative_path: str) -> str:
     try:
@@ -21,9 +21,19 @@ utility=CDLL(resource_path("utility.dll"))
 utility.decrypt.restype=ctypes.c_int32
 utility.decrypt.argtypes=[ctypes.c_char_p,ctypes.c_int32,ctypes.c_char_p,ctypes.c_int32]
 
-
 KEY1:bytes=b"\x00\x08\x07\x03\x05\x0C\x0B\x0A\x09\x01\x02\x0E\x04\x0D\x06\x0F"
 KEY2:bytes=b"\x02\x0E\x04\x0A\x06\x0B\x03\x00\x09\x0F\x07\x01\x0D\x08\x0C\x05"
+
+def guess_data_version(filepath:str)->str:
+    with open(filepath,"rb") as br:
+        br.seek(6,1)
+        data_version=int.from_bytes(br.read(2),"big")
+        br.seek(8,1)
+        if data_version == 1:
+            if br.read(1)[0] <= 1:
+                return "1_1"
+        return str(data_version)
+    raise Exception("Not supported data version")
 
 def equals(a1:bytes,a2:bytes)->bool:
     length=len(a1)
@@ -54,7 +64,7 @@ def verify(verify_code:int,verify_code_md5:bytes)->bool:
 def decrypt(data:bytes,key:bytes,start:int=0)->bytes:
     if utility.decrypt(ctypes.c_char_p(data),ctypes.c_int32(len(data)),ctypes.c_char_p(key),ctypes.c_int32(start))!=len(data):
         print("Dectypt failed")
-        exit()
+        raise SystemExit(1)
     return data
 
 def isDefaultCheckFile(filepath:str)->bool:
@@ -76,7 +86,7 @@ def extractZipFileAndDecrypt(file:BufferedReader,save_directory:str):
 
     for entry_name in zipfile.namelist():
         save_path=Path.join(zip_extract_path,entry_name.replace("/",Path.sep))
-        if(entry_name.endswith("/")):#directory entry
+        if(entry_name.endswith("/")):# Directory entry
             os.makedirs(save_path,exist_ok=True)
             continue
         os.makedirs(Path.dirname(save_path),exist_ok=True)
@@ -110,35 +120,46 @@ def extractAllEntries(file:BufferedReader,entry_list:list,save_dir:str):
             fs.write(data)
 
 def unpack(archiver_path:str,save_directory:str):
-    if not Path.exists(save_directory):
-        os.mkdir(save_directory)
+    os.makedirs(save_directory,exist_ok=True)
     if not Path.exists(archiver_path):
-        print(f"file {archiver_path} not found!")
-        exit()
-    
+        print(f"Error: File '{archiver_path}' not found!")
+        raise SystemExit(1)
+    known_data_versions = set(["1","1_1"])
+    data_version = guess_data_version(archiver_path)
+    print(f"Guessed data version: {data_version}")
+    if data_version not in known_data_versions:
+        print(f"Warning: The data version '{data_version}' may not be supported.")
     with open(archiver_path,"rb") as file:
         signature=file.read(6).decode("utf-8")
-        if(signature!="BKNPAK"):
-            print("Signature mismatch!")
-            exit()
-        data_version=int.from_bytes(file.read(2),"big")
-        print(f"data version:{data_version}")
+        if signature != "BKNPAK":
+            print("Error: Signature mismatch!")
+            raise SystemExit(1)
+        file.seek(2,1)# Skip the data version
         resource_table_offset=int.from_bytes(file.read(8),"little")+file.tell()
-        loading_form_title=readString(file)
+        if data_version == "1":
+            loading_form_title=readString(file)
+        else:# For data version 1_1 or greater
+            has_title = file.read(1)[0] != 0
+            if has_title:
+                loading_form_title = readString(file)
+            else:
+                loading_form_title = ""
         verify_code=int.from_bytes(file.read(4),"little")
         verify_code_md5_length=file.read(1)[0]
         verify_code_md5=file.read(verify_code_md5_length)
         if not verify(verify_code,verify_code_md5):
-            print("Verify failed")
-            exit()
+            print("Error: Hash verification failed!")
+            raise SystemExit(1)
         extractZipFileAndDecrypt(file,save_directory)
         file.seek(resource_table_offset,0)
         entry_count=int.from_bytes(file.read(4),"little")
         entry_list=list()
-        for i in range(0,entry_count):
+        for _ in range(0,entry_count):
             entry_name=readEncryptedString(file)
             compressed_size=int.from_bytes(file.read(8),"little")
             original_size=int.from_bytes(file.read(8),"little")
             entry_list.append((entry_name,compressed_size,original_size))
         extractAllEntries(file,entry_list,save_directory)
+        with open(Path.join(save_directory,"$pack_info.json"),"w",encoding="utf-8") as sw:
+            sw.write(JSON.dumps({"data_version":data_version,"loading_form_title":loading_form_title}))
         print("Completed!")
