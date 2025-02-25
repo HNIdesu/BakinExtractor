@@ -8,7 +8,7 @@ from zipfile import ZipFile
 from ctypes import CDLL
 import ctypes
 import sys
-
+from sys import exit
 
 def resource_path(relative_path: str) -> str:
     try:

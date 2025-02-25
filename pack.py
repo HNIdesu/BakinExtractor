@@ -7,6 +7,7 @@ import sys
 import os.path as Path
 from hashlib import md5
 from io import BufferedWriter,BytesIO
+from sys import exit
 
 def resource_path(relative_path: str) -> str:
     try:
