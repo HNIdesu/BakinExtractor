@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35707.178
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KastViewer.GUI", "KastViewer.GUI\KastViewer.GUI.csproj", "{FFC12843-E495-4571-908F-4303014A5134}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KastViewer.Core", "KastViewer.Core\KastViewer.Core.csproj", "{FFBDDABB-806B-42F6-92CB-7256AC84B10C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DDS", "DDS\DDS.csproj", "{EB52F25F-1F88-44E2-8F6B-07FEDC37D170}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FFC12843-E495-4571-908F-4303014A5134}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFC12843-E495-4571-908F-4303014A5134}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFC12843-E495-4571-908F-4303014A5134}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFC12843-E495-4571-908F-4303014A5134}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFBDDABB-806B-42F6-92CB-7256AC84B10C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFBDDABB-806B-42F6-92CB-7256AC84B10C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFBDDABB-806B-42F6-92CB-7256AC84B10C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFBDDABB-806B-42F6-92CB-7256AC84B10C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB52F25F-1F88-44E2-8F6B-07FEDC37D170}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB52F25F-1F88-44E2-8F6B-07FEDC37D170}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB52F25F-1F88-44E2-8F6B-07FEDC37D170}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB52F25F-1F88-44E2-8F6B-07FEDC37D170}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -6,3 +6,5 @@ __pycache__
 /*.spec
 /utility.dll
 /*.bak
+/KastParser
+/RbrParser
